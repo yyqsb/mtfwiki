@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>激素计算工具</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --brand: #7C6FE8;
+    --brand-light: rgba(124, 111, 232, 0.08);
+    --bg: #ffffff;
+    --bg-alt: #f6f6f7;
+    --text-1: #2c2c2c;
+    --text-2: #6b6b80;
+    --divider: #e2e2e3;
+    --danger: #E05C5C;
+    --warning: #F0A94C;
+    --success: #4CAF7D;
+    --trans-blue: #5BCEFA;
+    --trans-pink: #F5A9B8;
+  }
+    body.dark {
+    --bg: #12121a;
+    --bg-alt: #1e1e2a;
+    --text-1: #e8e8f0;
+    --text-2: #9a9ab0;
+    --divider: #2e2e3e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Inter", "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 20px;
+  }
+
+  .tool-container { max-width: 640px; margin: 0 auto; }
+
+  .tool-header { text-align: center; margin-bottom: 20px; }
+  .tool-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .tool-header p { font-size: 13px; color: var(--text-2); }
+
+  /* 模式切换 */
+  .mode-switch {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    background: var(--bg-alt);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .mode-switch button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .mode-switch button.active {
+    background: var(--brand);
+    color: white;
+  }
+  .mode-switch button:hover:not(.active) {
+    background: rgba(124, 111, 232, 0.06);
+    color: var(--brand);
+  }
+
+  .card {
+    background: var(--bg-alt);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .converter-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .converter-row:last-child { margin-bottom: 0; }
+
+  .converter-row label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 4px;
+  }
+
+  .converter-row input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .converter-row input:focus { border-color: var(--brand); }
+
+  .swap-btn {
+    background: var(--brand-light);
+    color: var(--brand);
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 18px;
+    transition: background 0.2s;
+  }
+  .swap-btn:hover { background: rgba(124, 111, 232, 0.18); }
+
+  .unit-label {
+    font-size: 11px;
+    color: var(--text-2);
+    text-align: center;
+    padding-top: 2px;
+  }
+
+  .divider-line {
+    height: 1px;
+    background: var(--divider);
+    margin: 16px 0;
+  }
+
+  .drug-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .drug-table th {
+    text-align: left;
+    padding: 8px 6px;
+    color: var(--text-2);
+    font-weight: 600;
+    border-bottom: 1px solid var(--divider);
+    font-size: 12px;
+  }
+  .drug-table td {
+    padding: 10px 6px;
+    border-bottom: 1px dashed var(--divider);
+    vertical-align: top;
+  }
+  .drug-table tr:last-child td { border-bottom: none; }
+  .drug-name { font-weight: 600; color: var(--text-1); }
+  .drug-sub { font-size: 11px; color: var(--text-2); display: block; margin-top: 2px; }
+
+  .schedule-result {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .schedule-result .time-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--divider);
+  }
+  .schedule-result .time-row:last-child { border-bottom: none; }
+  .schedule-result .time-label { color: var(--text-2); }
+  .schedule-result .time-val { font-weight: 600; color: var(--brand); }
+
+  .dose-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .dose-selector button {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .dose-selector button.active {
+    background: var(--brand);
+    color: white;
+    border-color: var(--brand);
+  }
+  .dose-selector button:hover:not(.active) {
+    background: var(--brand-light);
+    border-color: var(--brand);
+  }
+
+  .disclaimer {
+    background: rgba(224, 92, 92, 0.06);
+    border-left: 3px solid var(--danger);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+  .disclaimer strong { color: var(--danger); }
+
+  .range-hint {
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .range-hint .ok { color: var(--success); }
+  .range-hint .high { color: var(--warning); }
+  .range-hint .low { color: var(--danger); }
+
+  /* 未成年专属样式 */
+  .minor-only { display: none; }
+  .minor-only.visible { display: block; }
+
+  .minor-banner {
+    background: linear-gradient(135deg, rgba(91,206,250,0.08), rgba(245,169,184,0.08));
+    border: 1px solid rgba(124, 111, 232, 0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .minor-banner .banner-title {
+    font-weight: 700;
+    color: var(--brand);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .minor-banner ul {
+    padding-left: 18px;
+    color: var(--text-2);
+  }
+  .minor-banner li { margin-bottom: 3px; }
+
+  .weight-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 12px;
+  }
+  .weight-row input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+  }
+  .weight-row input:focus { border-color: var(--brand); }
+
+  .estimate-result {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .estimate-result .est-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--divider);
+  }
+  .estimate-result .est-row:last-child { border-bottom: none; }
+  .estimate-result .est-label { color: var(--text-2); }
+  .estimate-result .est-val { font-weight: 600; color: var(--brand); }
+
+  .monitor-list {
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .monitor-list .monitor-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--divider);
+  }
+  .monitor-list .monitor-item:last-child { border-bottom: none; }
+  .monitor-list .monitor-icon { flex-shrink: 0; }
+  .monitor-list .monitor-text { flex: 1; }
+  .monitor-list .monitor-freq {
+    font-size: 11px;
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 12px; }
+    .converter-row { grid-template-columns: 1fr; gap: 6px; }
+    .swap-btn { margin: 0 auto; transform: rotate(90deg); }
+  }
+    /* ============ 激素曲线 ============ */
+  .curve-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .curve-controls .full-width { grid-column: 1 / -1; }
+
+  .curve-controls label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 4px;
+  }
+  .curve-controls select,
+  .curve-controls input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  .curve-controls select:focus,
+  .curve-controls input:focus { border-color: var(--brand); }
+
+  .chart-wrapper {
+    position: relative;
+    height: 280px;
+    margin-top: 8px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  .curve-legend {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.7;
+  }
+  .curve-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .curve-legend .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .curve-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+  .curve-stats .stat-box {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .curve-stats .stat-label {
+    color: var(--text-2);
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+  .curve-stats .stat-val {
+    color: var(--brand);
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    .curve-controls { grid-template-columns: 1fr; }
+    .curve-stats { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="tool-container">
+
+  <div class="tool-header">
+    <h1>激素计算工具</h1>
+    <p></p>
+  </div>
+
+  <!-- 模式切换 -->
+  <div class="mode-switch">
+    <button class="active" data-mode="adult" onclick="switchMode('adult')">成年模式</button>
+    <button data-mode="minor" onclick="switchMode('minor')">未成年模式</button>
+  </div>
+
+  <!-- 未成年提示横幅 -->
+  <div class="minor-banner minor-only" id="minor-banner">
+    <div class="banner-title">🛡️ 未成年 MtF 重要提示</div>
+    <ul>
+      <li>未成年 HRT <strong>必须在专业医生指导下进行</strong>，严禁自行用药</li>
+      <li>青春期阻断（GnRH 激动剂）是未成年阶段的核心干预，通常从 Tanner II 期开始</li>
+      <li>雌激素的引入需根据骨骼发育情况和医生评估决定，通常不早于 16 岁[reference:1]</li>
+      <li>需定期监测身高、体重、Tanner 分期、骨密度和激素水平[reference:2]</li>
+    </ul>
+  </div>
+
+  <!-- ============ 1. 单位换算 ============ -->
+  <div class="card">
+    <div class="card-title">🔄 激素单位换算</div>
+
+    <div class="converter-row">
+      <div>
+        <label>雌二醇 (E2)</label>
+        <input type="number" id="e2-pg" placeholder="pg/mL" step="0.1">
+        <div class="unit-label">pg/mL</div>
+      </div>
+      <button class="swap-btn" onclick="swapUnit('e2')" title="交换">⇄</button>
+      <div>
+        <input type="number" id="e2-pmol" placeholder="pmol/L" step="0.1">
+        <div class="unit-label">pmol/L</div>
+      </div>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="converter-row">
+      <div>
+        <label>睾酮 (T)</label>
+        <input type="number" id="t-ng" placeholder="ng/dL" step="0.1">
+        <div class="unit-label">ng/dL</div>
+      </div>
+      <button class="swap-btn" onclick="swapUnit('t')" title="交换">⇄</button>
+      <div>
+        <input type="number" id="t-nmol" placeholder="nmol/L" step="0.1">
+        <div class="unit-label">nmol/L</div>
+      </div>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="converter-row">
+      <div>
+        <label>孕酮 (P)</label>
+        <input type="number" id="p-ng" placeholder="ng/mL" step="0.1">
+        <div class="unit-label">ng/mL</div>
+      </div>
+      <button class="swap-btn" onclick="swapUnit('p')" title="交换">⇄</button>
+      <div>
+        <input type="number" id="p-nmol" placeholder="nmol/L" step="0.1">
+        <div class="unit-label">nmol/L</div>
+      </div>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="converter-row">
+      <div>
+        <label>泌乳素 (PRL)</label>
+        <input type="number" id="prl-ng" placeholder="ng/mL" step="0.1">
+        <div class="unit-label">ng/mL</div>
+      </div>
+      <button class="swap-btn" onclick="swapUnit('prl')" title="交换">⇄</button>
+      <div>
+        <input type="number" id="prl-miu" placeholder="mIU/L" step="0.1">
+        <div class="unit-label">mIU/L</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2. 参考范围 ============ -->
+  <div class="card">
+    <div class="card-title">📊 HRT 目标参考范围</div>
+    <p style="font-size: 13px; color: var(--text-2); margin-bottom: 12px;">
+      输入你的检查结果，自动判断是否在常见目标范围。
+    </p>
+    <div class="converter-row" style="grid-template-columns: 1fr;">
+      <div>
+        <label>雌二醇 (E2) — pg/mL</label>
+        <input type="number" id="check-e2" placeholder="输入检查值" step="0.1">
+        <div class="range-hint" id="e2-hint">成年目标范围：100 – 200 pg/mL[reference:3]</div>
+      </div>
+    </div>
+    <div class="converter-row" style="grid-template-columns: 1fr; margin-top: 12px;">
+      <div>
+        <label>睾酮 (T) — ng/dL</label>
+        <input type="number" id="check-t" placeholder="输入检查值" step="0.1">
+        <div class="range-hint" id="t-hint">成年目标范围：&lt; 50 ng/dL</div>
+      </div>
+    </div>
+    <div class="disclaimer">
+      <strong>⚠️ 免责声明</strong><br>
+      以上范围仅为常见参考值，不同医生、不同方案的目标范围可能不同。请以你自己的主治医生的建议为准。
+    </div>
+  </div>
+
+  <!-- ============ 3. 未成年专属：青春期阻断与剂量估算 ============ -->
+  <div class="card minor-only" id="minor-dose-card">
+    <div class="card-title">🧬 未成年剂量参考（需医生指导）</div>
+
+    <!-- 体重输入 -->
+    <div class="weight-row">
+      <div>
+        <label style="display:block; font-size:12px; color:var(--text-2); margin-bottom:4px;">
+          体重 (kg)
+        </label>
+        <input type="number" id="minor-weight" placeholder="输入体重，如 50" step="0.1">
+      </div>
+      <div style="font-size:12px; color:var(--text-2); padding-bottom:10px;">kg</div>
+    </div>
+
+    <div class="estimate-result" id="minor-estimate">
+      <div class="est-row">
+        <span class="est-label">雌激素起始参考 (5 µg/kg/day)</span>
+        <span class="est-val" id="est-start">—</span>
+      </div>
+      <div class="est-row">
+        <span class="est-label">6 个月后递增参考</span>
+        <span class="est-val" id="est-6mo">—</span>
+      </div>
+      <div class="est-row">
+        <span class="est-label">成年目标范围</span>
+        <span class="est-val">2 – 6 mg/day</span>
+      </div>
+    </div>
+
+    <p style="font-size:12px; color:var(--text-2); margin-top:10px; line-height:1.6;">
+      ⚠️ 以上为参考估算，实际剂量必须由医生根据 Tanner 分期、骨骼发育和身体反应来确定。每 6 个月递增一次，增量通常为 0.25 mg[reference:4]。
+    </p>
+  </div>
+
+  <!-- 青春期阻断剂参考表（未成年专属） -->
+  <div class="card minor-only" id="minor-blocker-card">
+    <div class="card-title">💉 青春期阻断剂参考（GnRH 激动剂）</div>
+    <table class="drug-table">
+      <thead>
+        <tr>
+          <th>药物</th>
+          <th>给药方式</th>
+          <th>常用剂量</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="drug-name">亮丙瑞林</span>
+            <span class="drug-sub">Leuprolide</span>
+          </td>
+          <td>肌注 / 皮下</td>
+          <td>3.75 mg / 月<br>或 11.25 mg / 3 月[reference:5]</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="drug-name">曲普瑞林</span>
+            <span class="drug-sub">Triptorelin</span>
+          </td>
+          <td>肌注 / 皮下</td>
+          <td>3.75 mg / 月<br>或 11.25 mg / 3 月[reference:6]</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="drug-name">戈舍瑞林</span>
+            <span class="drug-sub">Goserelin</span>
+          </td>
+          <td>皮下植入</td>
+          <td>3.6 mg / 月<br>或 10.8 mg / 3 月</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px; color:var(--text-2); margin-top:10px; line-height:1.6;">
+      GnRH 激动剂是青春期阻断的首选方案，通常从 Tanner II 期开始，可持续使用数年[reference:7]。若 GnRH 激动剂不可及或费用过高，可在医生指导下考虑醋酸甲羟孕酮作为替代[reference:8]。
+    </p>
+  </div>
+
+  <!-- 监测建议（未成年专属） -->
+  <div class="card minor-only" id="minor-monitor-card">
+    <div class="card-title">📋 定期监测建议</div>
+    <div class="monitor-list">
+      <div class="monitor-item">
+        <span class="monitor-icon">📏</span>
+        <span class="monitor-text">
+          身高、体重、坐高、血压、Tanner 分期
+          <span class="monitor-freq">每 3–6 个月</span>
+        </span>
+      </div>
+      <div class="monitor-item">
+        <span class="monitor-icon">🧪</span>
+        <span class="monitor-text">
+          LH、FSH、雌二醇 / 睾酮、25-OH 维生素 D
+          <span class="monitor-freq">每 6–12 个月</span>
+        </span>
+      </div>
+      <div class="monitor-item">
+        <span class="monitor-icon">🩸</span>
+        <span class="monitor-text">
+          血常规、血脂、肝肾功能、空腹血糖
+          <span class="monitor-freq">每 6–12 个月</span>
+        </span>
+      </div>
+      <div class="monitor-item">
+        <span class="monitor-icon">🦴</span>
+        <span class="monitor-text">
+          DXA 骨密度和骨龄（如临床需要或仍在生长）
+          <span class="monitor-freq">每 1–2 年</span>
+        </span>
+      </div>
+    </div>
+    <p style="font-size:12px; color:var(--text-2); margin-top:10px; line-height:1.6;">
+      以上监测频率参考内分泌学会和 WPATH SOC8 的建议[reference:9]。具体检查项目和频率需由主治医生根据个体情况确定。
+    </p>
+  </div>
+
+  <!-- ============ 4. 服药时间表 ============ -->
+  <div class="card">
+    <div class="card-title">⏰ 服药时间表生成</div>
+    <p style="font-size: 13px; color: var(--text-2); margin-bottom: 12px;">
+      根据每天的服药次数，生成从第一次服药开始的时间表。
+    </p>
+
+    <label style="display:block; font-size: 12px; color: var(--text-2); margin-bottom: 6px;">
+      每天服药次数
+    </label>
+    <div class="dose-selector" id="dose-selector">
+      <button data-times="1">1 次</button>
+      <button data-times="2">2 次</button>
+      <button data-times="3" class="active">3 次</button>
+      <button data-times="4">4 次</button>
+    </div>
+
+    <div class="converter-row" style="grid-template-columns: 1fr;">
+      <div>
+        <label>第一次服药时间</label>
+        <input type="time" id="first-dose" value="08:00">
+      </div>
+    </div>
+
+    <div class="schedule-result" id="schedule-result"></div>
+  </div>
+    <!-- ============ 激素药代动力学曲线 ============ -->
+  <div class="card">
+    <div class="card-title">📈 激素浓度曲线（模拟）</div>
+    <p style="font-size: 13px; color: var(--text-2); margin-bottom: 12px;">
+      基于单室药代动力学模型，模拟不同给药方式在体内的血药浓度变化。曲线为教学示意，实际血药浓度因个体差异而异。
+    </p>
+
+    <div class="curve-controls">
+      <div class="full-width">
+        <label>给药方式</label>
+        <select id="curve-drug">
+          <option value="oral_ev">口服 戊酸雌二醇 (EV)</option>
+          <option value="sublingual_e2">舌下 17β-雌二醇</option>
+          <option value="gel">经皮 雌二醇凝胶</option>
+          <option value="injection_ev">肌注 戊酸雌二醇 (EV)</option>
+          <option value="injection_ec">肌注 环戊丙酸雌二醇 (EC)</option>
+          <option value="oral_spiro">口服 螺内酯</option>
+          <option value="oral_cpa">口服 醋酸环丙孕酮 (CPA)</option>
+        </select>
+      </div>
+
+      <div>
+        <label>单次剂量 (mg)</label>
+        <input type="number" id="curve-dose" value="2" step="0.25" min="0.25">
+      </div>
+
+      <div>
+        <label>每天服药次数</label>
+        <select id="curve-freq">
+          <option value="1">1 次</option>
+          <option value="2" selected>2 次</option>
+          <option value="3">3 次</option>
+          <option value="4">4 次</option>
+        </select>
+      </div>
+
+      <div class="full-width">
+        <label>显示时长</label>
+        <select id="curve-duration">
+          <option value="24">24 小时（1 天）</option>
+          <option value="48" selected>48 小时（2 天）</option>
+          <option value="72">72 小时（3 天）</option>
+          <option value="168">168 小时（7 天）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chart-wrapper">
+      <canvas id="curveChart"></canvas>
+    </div>
+
+    <div class="curve-stats">
+      <div class="stat-box">
+        <div class="stat-label">峰值浓度</div>
+        <div class="stat-val" id="stat-peak">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">谷值浓度</div>
+        <div class="stat-val" id="stat-trough">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">峰值 / 谷值比</div>
+        <div class="stat-val" id="stat-ratio">—</div>
+      </div>
+    </div>
+
+    <div class="curve-legend">
+      <div class="legend-item">
+        <span class="legend-dot" style="background:#7C6FE8;"></span>
+        <span>相对血药浓度（任意单位，只用于比较形状，不代表实际数值）</span>
+      </div>
+      <div class="legend-item">
+        <span style="font-size:11px;">💡 峰值/谷值比越接近 1，说明浓度越平稳；越大说明波动越剧烈。</span>
+      </div>
+    </div>
+
+    <div class="disclaimer" style="margin-top: 12px;">
+      <strong>⚠️ 免责声明</strong><br>
+      本曲线基于简化的药代动力学模型，参数取自公开文献的典型值，<strong>不代表任何个体的真实血药浓度</strong>。实际浓度受体重、肝功能、代谢酶活性、给药方式等多种因素影响。请以医生开具的检查和方案为准。
+    </div>
+  </div>
+
+  <!-- ============ 5. 药物参考 ============ -->
+  <div class="card">
+    <div class="card-title">💊 常见 HRT 药物参考（成年）</div>
+    <table class="drug-table">
+      <thead>
+        <tr>
+          <th>药物</th>
+          <th>常用剂量</th>
+          <th>半衰期</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="drug-name">戊酸雌二醇 (EV)</span><span class="drug-sub">口服 / 舌下</span></td>
+          <td>2 – 6 mg/天</td>
+          <td>12 – 20 小时</td>
+        </tr>
+        <tr>
+          <td><span class="drug-name">17β-雌二醇</span><span class="drug-sub">舌下 / 含服</span></td>
+          <td>1 – 4 mg/天</td>
+          <td>8 – 14 小时</td>
+        </tr>
+        <tr>
+          <td><span class="drug-name">雌二醇凝胶</span><span class="drug-sub">经皮</span></td>
+          <td>1 – 3 揿/天</td>
+          <td>—（经皮缓慢吸收）</td>
+        </tr>
+        <tr>
+          <td><span class="drug-name">螺内酯</span><span class="drug-sub">口服（抗雄）</span></td>
+          <td>50 – 200 mg/天</td>
+          <td>约 16 小时</td>
+        </tr>
+        <tr>
+          <td><span class="drug-name">醋酸环丙孕酮 (CPA)</span><span class="drug-sub">口服（抗雄）</span></td>
+          <td>12.5 – 50 mg/天</td>
+          <td>约 1.5 – 2 天</td>
+        </tr>
+        <tr>
+          <td><span class="drug-name">比卡鲁胺</span><span class="drug-sub">口服（抗雄）</span></td>
+          <td>25 – 50 mg/天</td>
+          <td>约 5 – 6 天</td>
+        </tr>
+        <tr>
+          <td><span class="drug-name">黄体酮</span><span class="drug-sub">口服（孕激素）</span></td>
+          <td>100 – 200 mg/天</td>
+          <td>约 1 – 2 小时</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="disclaimer" style="margin-top: 12px;">
+      <strong>⚠️ 免责声明</strong><br>
+      以上剂量仅为常见参考值，不构成用药建议。具体剂量必须由专业医生根据你的身体情况、检查结果和用药反应来确定。请勿自行调药。
+    </div>
+  </div>
+
+</div>
+
+<script>
+    // ================= 主题同步 =================
+  (function initTheme() {
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved ? (saved === 'dark') : prefersDark;
+    document.body.classList.toggle('dark', isDark);
+
+    window.addEventListener('message', function (e) {
+      if (!e.data || e.data.type !== 'theme') return;
+      const dark = e.data.theme === 'dark';
+      document.body.classList.toggle('dark', dark);
+      // 曲线颜色要跟着重绘
+      if (typeof renderCurve === 'function') {
+        try { renderCurve(); } catch (err) {}
+      }
+    });
+  })();
+   /* ============ 单位换算 ============ */
+  const FACTORS = { e2: 3.671, t: 0.0347, p: 3.18, prl: 21.2 };
+  function getSuffix(prefix, side) {
+    const map = {
+      e2:  { left: 'pg',   right: 'pmol' },
+      t:   { left: 'ng',   right: 'nmol' },
+      p:   { left: 'ng',   right: 'nmol' },
+      prl: { left: 'ng',   right: 'miu' }
+    };
+    return map[prefix][side];
+  }
+  function setupConverter(prefix, factor) {
+    const left  = document.getElementById(prefix + '-' + getSuffix(prefix, 'left'));
+    const right = document.getElementById(prefix + '-' + getSuffix(prefix, 'right'));
+    left.addEventListener('input', () => {
+      const v = parseFloat(left.value);
+      right.value = isNaN(v) ? '' : (v * factor).toFixed(2);
+    });
+    right.addEventListener('input', () => {
+      const v = parseFloat(right.value);
+      left.value = isNaN(v) ? '' : (v / factor).toFixed(2);
+    });
+  }
+  function swapUnit(prefix) {
+    const left  = document.getElementById(prefix + '-' + getSuffix(prefix, 'left'));
+    const right = document.getElementById(prefix + '-' + getSuffix(prefix, 'right'));
+    if (right.value) { left.value = right.value; left.dispatchEvent(new Event('input')); }
+  }
+  setupConverter('e2', FACTORS.e2);
+  setupConverter('t', FACTORS.t);
+  setupConverter('p', FACTORS.p);
+  setupConverter('prl', FACTORS.prl);
+
+  /* ============ 模式切换 ============ */
+  let currentMode = 'adult';
+  function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-switch button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    document.querySelectorAll('.minor-only').forEach(el => el.classList.toggle('visible', mode === 'minor'));
+    updateRangeHints();
+    if (mode === 'minor') calcMinorDose();
+  }
+
+  /* ============ 参考范围 ============ */
+  const e2Input = document.getElementById('check-e2');
+  const tInput  = document.getElementById('check-t');
+  const e2Hint  = document.getElementById('e2-hint');
+  const tHint   = document.getElementById('t-hint');
+
+  function updateRangeHints() {
+    if (e2Input.value) e2Input.dispatchEvent(new Event('input'));
+    if (tInput.value) tInput.dispatchEvent(new Event('input'));
+  }
+
+  e2Input.addEventListener('input', () => {
+    const v = parseFloat(e2Input.value);
+    const base = currentMode === 'minor'
+      ? '目标范围：按 Tanner 分期参照同龄女性水平'
+      : '目标范围：100 – 200 pg/mL';
+    if (isNaN(v)) { e2Hint.innerHTML = base; return; }
+    if (currentMode === 'minor') {
+      e2Hint.innerHTML = base + '<br><span class="ok">✓ 已输入 ' + v + ' pg/mL，请以医生评估为准</span>';
+    } else if (v < 100) {
+      e2Hint.innerHTML = base + '<br><span class="low">⬇ 当前偏低（' + v + ' pg/mL）</span>';
+    } else if (v > 200) {
+      e2Hint.innerHTML = base + '<br><span class="high">⬆ 当前偏高（' + v + ' pg/mL）</span>';
+    } else {
+      e2Hint.innerHTML = base + '<br><span class="ok">✓ 在目标范围内</span>';
+    }
+  });
+
+  tInput.addEventListener('input', () => {
+    const v = parseFloat(tInput.value);
+    const base = currentMode === 'minor'
+      ? '目标范围：抑制至青春期前水平或按医生评估'
+      : '目标范围：&lt; 50 ng/dL';
+    if (isNaN(v)) { tHint.innerHTML = base; return; }
+    if (currentMode === 'minor') {
+      tHint.innerHTML = base + '<br><span class="ok">✓ 已输入 ' + v + ' ng/dL，请以医生评估为准</span>';
+    } else if (v < 50) {
+      tHint.innerHTML = base + '<br><span class="ok">✓ 已达标（' + v + ' ng/dL）</span>';
+    } else {
+      tHint.innerHTML = base + '<br><span class="high">⬆ 当前偏高（' + v + ' ng/dL）</span>';
+    }
+  });
+
+  /* ============ 未成年剂量 ============ */
+  const minorWeight = document.getElementById('minor-weight');
+  const estStart = document.getElementById('est-start');
+  const est6mo = document.getElementById('est-6mo');
+  function calcMinorDose() {
+    const w = parseFloat(minorWeight.value);
+    if (isNaN(w) || w <= 0) { estStart.textContent = '—'; est6mo.textContent = '—'; return; }
+    const startMg = w * 0.005;
+    const nextMg = Math.min(startMg + 0.25, 6);
+    estStart.textContent = startMg.toFixed(2) + ' mg/day';
+    est6mo.textContent = nextMg.toFixed(2) + ' mg/day';
+  }
+  minorWeight.addEventListener('input', calcMinorDose);
+
+  /* ============ 服药时间表 ============ */
+  let doseTimes = 3;
+  document.querySelectorAll('#dose-selector button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#dose-selector button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      doseTimes = parseInt(btn.dataset.times);
+      renderSchedule();
+    });
+  });
+  document.getElementById('first-dose').addEventListener('input', renderSchedule);
+  function renderSchedule() {
+    const first = document.getElementById('first-dose').value || '08:00';
+    const [h, m] = first.split(':').map(Number);
+    const startMinutes = h * 60 + m;
+    const interval = Math.round(24 * 60 / doseTimes);
+    let html = '';
+    for (let i = 0; i < doseTimes; i++) {
+      const totalMin = (startMinutes + i * interval) % (24 * 60);
+      const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+      const mm = String(totalMin % 60).padStart(2, '0');
+      html += '<div class="time-row"><span class="time-label">第 ' + (i + 1) + ' 次</span><span class="time-val">' + hh + ':' + mm + '</span></div>';
+    }
+    document.getElementById('schedule-result').innerHTML = html;
+  }
+
+  /* ============ 激素曲线 ============ */
+  const DRUG_PARAMS = {
+    oral_ev:       { halfLife: 16,  ka: 0.5, F: 0.05, name: '口服 EV' },
+    sublingual_e2: { halfLife: 8,   ka: 2.0, F: 0.25, name: '舌下 E2' },
+    gel:           { halfLife: 24,  ka: 0.1, F: 0.10, name: '经皮凝胶' },
+    injection_ev:  { halfLife: 120, ka: 0.5, F: 0.50, name: '肌注 EV' },
+    injection_ec:  { halfLife: 180, ka: 0.3, F: 0.50, name: '肌注 EC' },
+    oral_spiro:    { halfLife: 16,  ka: 0.8, F: 0.90, name: '螺内酯' },
+    oral_cpa:      { halfLife: 40,  ka: 0.6, F: 0.85, name: 'CPA' }
+  };
+  let curveChart = null;
+
+  function bateman(t, dose, F, ka, k) {
+    if (t < 0) return 0;
+    if (Math.abs(ka - k) < 1e-6) return dose * F * ka * t * Math.exp(-k * t);
+    return (dose * F * ka) / (ka - k) * (Math.exp(-k * t) - Math.exp(-ka * t));
+  }
+
+  function buildCurveData(drugKey, dose, timesPerDay, hoursToShow) {
+    const p = DRUG_PARAMS[drugKey];
+    const k = Math.log(2) / p.halfLife;
+    const interval = 24 / timesPerDay;
+    const points = [];
+    const step = hoursToShow <= 72 ? 0.25 : 1;
+    let peak = 0;
+    for (let t = 0; t <= hoursToShow; t += step) {
+      let conc = 0;
+      for (let tDose = 0; tDose <= t; tDose += interval) {
+        conc += bateman(t - tDose, dose, p.F, p.ka, k);
+      }
+      points.push({ x: t, y: conc });
+      if (conc > peak) peak = conc;
+    }
+    return { points, peak };
+  }
+
+   function getChartColors() {
+    const isDark = document.body.classList.contains('dark');
+    return {
+      line: '#7C6FE8',
+      fill: isDark ? 'rgba(124, 111, 232, 0.18)' : 'rgba(124, 111, 232, 0.10)',
+      text: isDark ? '#9a9ab0' : '#6b6b80',
+      grid: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+    };
+  }
+
+  function renderCurve() {
+    const drugKey = document.getElementById('curve-drug').value;
+    const dose = parseFloat(document.getElementById('curve-dose').value) || 0;
+    const timesPerDay = parseInt(document.getElementById('curve-freq').value);
+    const hours = parseInt(document.getElementById('curve-duration').value);
+
+    const { points, peak } = buildCurveData(drugKey, dose, timesPerDay, hours);
+
+    const interval = 24 / timesPerDay;
+    const tailStart = Math.max(0, hours - interval);
+    let trough = Infinity;
+    points.forEach(pt => { if (pt.x >= tailStart && pt.y < trough) trough = pt.y; });
+    if (!isFinite(trough) || trough < 0) trough = 0;
+
+    document.getElementById('stat-peak').textContent = peak.toFixed(2);
+    document.getElementById('stat-trough').textContent = trough.toFixed(2);
+    const ratio = trough > 0.001 ? (peak / trough) : Infinity;
+    document.getElementById('stat-ratio').textContent = isFinite(ratio) ? ratio.toFixed(2) : '—';
+
+    const colors = getChartColors();
+    if (curveChart) curveChart.destroy();
+    const ctx = document.getElementById('curveChart').getContext('2d');
+    curveChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: DRUG_PARAMS[drugKey].name,
+          data: points,
+          borderColor: colors.line,
+          backgroundColor: colors.fill,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          fill: true,
+          tension: 0.35,
+          parsing: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        interaction: { mode: 'nearest', intersect: false },
+        scales: {
+          x: {
+            type: 'linear',
+            title: { display: true, text: '时间（小时）', color: colors.text, font: { size: 11 } },
+            ticks: { color: colors.text, font: { size: 11 }, maxTicksLimit: 8 },
+            grid: { color: colors.grid }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: '相对浓度', color: colors.text, font: { size: 11 } },
+            ticks: { color: colors.text, font: { size: 11 } },
+            grid: { color: colors.grid }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(30, 30, 42, 0.92)',
+            titleColor: '#fff',
+            bodyColor: '#e8e8f0',
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: false,
+            callbacks: {
+              title: (items) => {
+                const t = items[0].parsed.x;
+                const h = Math.floor(t);
+                const m = Math.round((t - h) * 60);
+                return `${h} 小时 ${String(m).padStart(2, '0')} 分`;
+              },
+              label: (item) => '相对浓度：' + item.parsed.y.toFixed(3)
+            }
+          }
+        }
+      }
+    });
+  }
+
+  document.getElementById('curve-drug').addEventListener('change', renderCurve);
+  document.getElementById('curve-dose').addEventListener('input', renderCurve);
+  document.getElementById('curve-freq').addEventListener('change', renderCurve);
+  document.getElementById('curve-duration').addEventListener('change', renderCurve);
+
+  /* ============ 初始化 ============ */
+  renderSchedule();
+  updateRangeHints();
+  renderCurve();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>罩杯计算器</title>
+<style>
+  :root {
+    --brand: #7C6FE8;
+    --brand-light: rgba(124, 111, 232, 0.08);
+    --bg: #ffffff;
+    --bg-alt: #f6f6f7;
+    --text-1: #2c2c2c;
+    --text-2: #6b6b80;
+    --divider: #e2e2e3;
+    --danger: #E05C5C;
+    --warning: #F0A94C;
+    --success: #4CAF7D;
+    --trans-blue: #5BCEFA;
+    --trans-pink: #F5A9B8;
+  }
+    body.dark {
+    --bg: #12121a;
+    --bg-alt: #1e1e2a;
+    --text-1: #e8e8f0;
+    --text-2: #9a9ab0;
+    --divider: #2e2e3e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Inter", "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 20px;
+  }
+
+  .tool-container { max-width: 640px; margin: 0 auto; }
+
+  .tool-header { text-align: center; margin-bottom: 20px; }
+  .tool-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .tool-header p { font-size: 13px; color: var(--text-2); }
+
+  .privacy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--success);
+    background: rgba(76, 175, 125, 0.08);
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-top: 6px;
+  }
+
+  .card {
+    background: var(--bg-alt);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .step-hint {
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 14px;
+    line-height: 1.7;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    border-left: 3px solid var(--trans-blue);
+  }
+
+  .measure-group {
+    margin-bottom: 16px;
+  }
+  .measure-group:last-child { margin-bottom: 0; }
+
+  .measure-group-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-1);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .measure-group-title .badge {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--brand);
+    background: var(--brand-light);
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
+
+  .measure-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .measure-row.single { grid-template-columns: 1fr; }
+
+  .measure-row label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 4px;
+  }
+
+  .measure-row input {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .measure-row input:focus { border-color: var(--brand); }
+
+  .input-unit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .input-unit input { flex: 1; }
+  .input-unit .unit {
+    font-size: 12px;
+    color: var(--text-2);
+    white-space: nowrap;
+  }
+
+  .divider-line {
+    height: 1px;
+    background: var(--divider);
+    margin: 16px 0;
+  }
+
+  /* 计算按钮 */
+  .calc-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--brand);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .calc-btn:hover { background: #6B5FD8; }
+  .calc-btn:active { transform: scale(0.98); }
+  .calc-btn:disabled {
+    background: var(--divider);
+    color: var(--text-2);
+    cursor: not-allowed;
+  }
+
+  /* 结果区 */
+  .result-card {
+    background: linear-gradient(135deg, rgba(91,206,250,0.06), rgba(245,169,184,0.06));
+    border: 1px solid rgba(124, 111, 232, 0.2);
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .result-card.visible { display: block; }
+
+  .result-label {
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 8px;
+  }
+  .result-size {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--brand);
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .result-size .cup-letter {
+    background: linear-gradient(135deg, var(--trans-blue), var(--trans-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .result-detail {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-top: 12px;
+    line-height: 1.8;
+  }
+  .result-detail strong { color: var(--text-1); }
+
+  /* 尺寸对照表 */
+  .size-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .size-table th {
+    text-align: left;
+    padding: 8px 6px;
+    color: var(--text-2);
+    font-weight: 600;
+    border-bottom: 1px solid var(--divider);
+    font-size: 12px;
+  }
+  .size-table td {
+    padding: 9px 6px;
+    border-bottom: 1px dashed var(--divider);
+  }
+  .size-table tr:last-child td { border-bottom: none; }
+  .size-table .highlight {
+    background: var(--brand-light);
+    font-weight: 700;
+    color: var(--brand);
+  }
+
+  /* 注意事项 */
+  .tips-list {
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .tips-list .tip-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--divider);
+  }
+  .tips-list .tip-item:last-child { border-bottom: none; }
+  .tips-list .tip-icon { flex-shrink: 0; font-size: 15px; }
+  .tips-list .tip-text { flex: 1; }
+
+  .disclaimer {
+    background: rgba(224, 92, 92, 0.06);
+    border-left: 3px solid var(--danger);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+  .disclaimer strong { color: var(--danger); }
+
+  @media (max-width: 480px) {
+    body { padding: 12px; }
+    .measure-row { grid-template-columns: 1fr; }
+    .result-size { font-size: 34px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="tool-container">
+
+  <div class="tool-header">
+    <h1>罩杯计算器</h1>
+    <p>算法来自MtF.wiki</p>
+    <div class="privacy-badge">数据仅在本地计算，不会上传</div>
+  </div>
+
+  <!-- ============ 测量说明 ============ -->
+  <div class="card">
+    <div class="card-title">📏 测量说明</div>
+    <div class="step-hint">
+      请准备一根软尺并面对镜子，看得到胸部。按照下面的步骤依次测量并填入数值。所有测量都在<strong>直立、放松</strong>的状态下进行，软尺保持水平，不要勒紧。
+    </div>
+
+    <!-- 胸下围 -->
+    <div class="measure-group">
+      <div class="measure-group-title">
+        <span>胸下围</span>
+        <span class="badge">2 次测量</span>
+      </div>
+      <div class="measure-row">
+        <div>
+          <label>放松测量 (cm)</label>
+          <input type="number" id="underbust-relaxed" placeholder="如 85" step="0.1" min="50" max="200">
+        </div>
+        <div>
+          <label>呼气测量 (cm)</label>
+          <input type="number" id="underbust-exhale" placeholder="如 83" step="0.1" min="50" max="200">
+        </div>
+      </div>
+      <div class="step-hint" style="margin-top: 8px; margin-bottom: 0;">
+        用软尺贴合乳房下缘 ⊙⊙，水平绕身体一圈。先放松状态测一次，再呼气到底测一次。
+      </div>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <!-- 胸围 -->
+    <div class="measure-group">
+      <div class="measure-group-title">
+        <span>胸围</span>
+        <span class="badge">3 次测量</span>
+      </div>
+      <div class="measure-row" style="margin-bottom: 10px;">
+        <div>
+          <label>放松测量 (cm)</label>
+          <input type="number" id="bust-relaxed" placeholder="如 95" step="0.1" min="50" max="250">
+        </div>
+        <div>
+          <label>45° 前倾测量 (cm)</label>
+          <input type="number" id="bust-45" placeholder="如 98" step="0.1" min="50" max="250">
+        </div>
+      </div>
+      <div class="measure-row single">
+        <div>
+          <label>90° 前倾测量 (cm)</label>
+          <input type="number" id="bust-90" placeholder="如 102" step="0.1" min="50" max="250">
+        </div>
+      </div>
+      <div class="step-hint" style="margin-top: 8px; margin-bottom: 0;">
+        用软尺经过乳头 ⊙⊙ 绕身体一圈。分别测放松站立、身体前倾 45°、身体前倾 90° 三个数值。
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 计算按钮 ============ -->
+  <button class="calc-btn" id="calc-btn" onclick="calculate()">计算罩杯尺寸</button>
+
+  <!-- ============ 结果 ============ -->
+  <div class="result-card" id="result-card">
+    <div class="result-label">你的预估罩杯尺寸</div>
+    <div class="result-size" id="result-size">—</div>
+    <div class="result-detail" id="result-detail"></div>
+  </div>
+
+  <!-- ============ 尺寸对照表 ============ -->
+  <div class="card" id="size-table-card" style="display: none;">
+    <div class="card-title">📊 尺寸对照表</div>
+    <table class="size-table">
+      <thead>
+        <tr>
+          <th>下胸围 (cm)</th>
+          <th>国际尺码</th>
+          <th>对应罩杯差值</th>
+        </tr>
+      </thead>
+      <tbody id="size-table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- ============ 注意事项 ============ -->
+  <div class="card">
+    <div class="card-title">💡 跨性别女性穿戴注意事项</div>
+    <div class="tips-list">
+      <div class="tip-item">
+        <span class="tip-icon">📐</span>
+        <span class="tip-text">
+          <strong>较宽的胸廓</strong>：跨性别女性通常胸腔更宽，下胸围相对于罩杯可能需要更大。使用实际测量值，不要在下胸围上加 4 英寸。
+        </span>
+      </div>
+      <div class="tip-item">
+        <span class="tip-icon">↔️</span>
+        <span class="tip-text">
+          <strong>胸部间距较宽</strong>：乳房位置更分散，之间的间距更大。建议选择中心更宽的文胸或深 V 款式。
+        </span>
+      </div>
+      <div class="tip-item">
+        <span class="tip-icon">🔺</span>
+        <span class="tip-text">
+          <strong>不同的突出度</strong>：乳房通常前突较少，形状更圆锥或管状。浅杯文胸、无钢圈内衣或运动文胸通常比聚拢款式更合适。
+        </span>
+      </div>
+      <div class="tip-item">
+        <span class="tip-icon">⏳</span>
+        <span class="tip-text">
+          <strong>持续变化</strong>：HRT 期间乳房发育持续 2–5 年，最大变化在前 2 年。早期不要大量投资昂贵文胸，尺码会变。
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 推荐款式 ============ -->
+  <div class="card">
+    <div class="card-title">👙 推荐内衣款式</div>
+    <table class="size-table">
+      <thead>
+        <tr>
+          <th>款式</th>
+          <th>特点</th>
+          <th>适合场景</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>无钢圈文胸</strong></td>
+          <td>灵活尺码，无钢圈压力</td>
+          <td>过渡早期 / 日常舒适</td>
+        </tr>
+        <tr>
+          <td><strong>运动内衣</strong></td>
+          <td>支撑性好，舒适压缩</td>
+          <td>日常穿着 / 过渡早期</td>
+        </tr>
+        <tr>
+          <td><strong>深 V 文胸</strong></td>
+          <td>较低的中心，适合间距较宽</td>
+          <td>衣服下更好的形状</td>
+        </tr>
+        <tr>
+          <td><strong>小型化文胸</strong></td>
+          <td>组织分布更宽，适合浅突出</td>
+          <td>衣服下更流畅的轮廓</td>
+        </tr>
+        <tr>
+          <td><strong>前扣文胸</strong></td>
+          <td>更容易穿戴，罩杯间距更宽</td>
+          <td>后扣不便时</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ 免责声明 ============ -->
+  <div class="disclaimer">
+    <strong>⚠️ 免责声明</strong><br>
+    计算结果仅供参考。由于个体差异和品牌差异，建议在购买内衣时进行试穿确认。如有特殊需求，请咨询商家或专业人士。
+  </div>
+
+</div>
+
+<script>
+      // ================= 主题同步 =================
+  (function initTheme() {
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved ? (saved === 'dark') : prefersDark;
+    document.body.classList.toggle('dark', isDark);
+
+    window.addEventListener('message', function (e) {
+      if (!e.data || e.data.type !== 'theme') return;
+      document.body.classList.toggle('dark', e.data.theme === 'dark');
+    });
+  })();
+  // ================= 罩杯字母映射 =================
+  // 差值 (cm) → 罩杯字母
+  // 参考常见尺码表，结合 MtF 群体特点做了微调
+  const CUP_MAP = [
+    { max: 7.5,  letter: 'AA' },
+    { max: 10,   letter: 'A'  },
+    { max: 12.5, letter: 'B'  },
+    { max: 15,   letter: 'C'  },
+    { max: 17.5, letter: 'D'  },
+    { max: 20,   letter: 'E'  },
+    { max: 22.5, letter: 'F'  },
+    { max: 25,   letter: 'G'  },
+    { max: 27.5, letter: 'H'  },
+    { max: 30,   letter: 'I'  },
+    { max: 32.5, letter: 'J'  },
+    { max: Infinity, letter: 'K+' }
+  ];
+
+  function getCupLetter(diff) {
+    for (const entry of CUP_MAP) {
+      if (diff <= entry.max) return entry.letter;
+    }
+    return 'K+';
+  }
+
+  // ================= 计算逻辑 =================
+  function calculate() {
+    // 读取输入
+    const underRelaxed = parseFloat(document.getElementById('underbust-relaxed').value);
+    const underExhale  = parseFloat(document.getElementById('underbust-exhale').value);
+    const bustRelaxed  = parseFloat(document.getElementById('bust-relaxed').value);
+    const bust45       = parseFloat(document.getElementById('bust-45').value);
+    const bust90       = parseFloat(document.getElementById('bust-90').value);
+
+    // 校验
+    const inputs = [
+      { val: underRelaxed, name: '胸下围（放松）' },
+      { val: underExhale,  name: '胸下围（呼气）' },
+      { val: bustRelaxed,  name: '胸围（放松）'   },
+      { val: bust45,       name: '胸围（45°）'    },
+      { val: bust90,       name: '胸围（90°）'    }
+    ];
+
+    for (const inp of inputs) {
+      if (isNaN(inp.val) || inp.val <= 0) {
+        alert('请填写完整的测量数值：' + inp.name);
+        return;
+      }
+    }
+
+    // 算法（来自 MtF.wiki）
+    // 胸下围 = (放松测量 + 呼气测量) ÷ 2
+    const underbust = (underRelaxed + underExhale) / 2;
+
+    // 罩杯差值 = (胸围放松 + 胸围45° + 胸围90°) ÷ 3 - 胸下围
+    const bustAvg = (bustRelaxed + bust45 + bust90) / 3;
+    const cupDiff = bustAvg - underbust;
+
+    // 最终尺寸 = 胸下围(向上取整到5的倍数) + 对应罩杯字母
+    const bandSize = Math.ceil(underbust / 5) * 5;
+    const cupLetter = getCupLetter(cupDiff);
+
+    // 显示结果
+    const resultCard = document.getElementById('result-card');
+    const resultSize = document.getElementById('result-size');
+    const resultDetail = document.getElementById('result-detail');
+
+    resultSize.innerHTML = bandSize + '<span class="cup-letter">' + cupLetter + '</span>';
+
+    // 如果是负差值（胸部尚未发育或测量误差）
+    if (cupDiff <= 0) {
+      resultDetail.innerHTML =
+        '罩杯差值：<strong>' + cupDiff.toFixed(1) + ' cm</strong><br>' +
+        '⚠️ 差值 ≤ 0，可能尚未开始发育或测量有误差。';
+    } else {
+      resultDetail.innerHTML =
+        '胸下围：<strong>' + underbust.toFixed(1) + ' cm</strong>（取整为 ' + bandSize + '）<br>' +
+        '胸围平均：<strong>' + bustAvg.toFixed(1) + ' cm</strong><br>' +
+        '罩杯差值：<strong>' + cupDiff.toFixed(1) + ' cm</strong> → ' + cupLetter + ' 杯';
+    }
+
+    resultCard.classList.add('visible');
+
+    // 生成尺寸对照表
+    renderSizeTable(underbust, cupDiff, bandSize, cupLetter);
+
+    // 滚动到结果
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ================= 尺寸对照表 =================
+  function renderSizeTable(underbust, cupDiff, bandSize, cupLetter) {
+    const card = document.getElementById('size-table-card');
+    const tbody = document.getElementById('size-table-body');
+
+    // 以当前下胸围为中心，列出 ±2 个尺码
+    const base = Math.round(underbust / 5) * 5;
+    let html = '';
+    const letters = ['AA','A','B','C','D','E','F','G'];
+
+    for (let offset = -2; offset <= 2; offset++) {
+      const band = base + offset * 5;
+      if (band < 55 || band > 150) continue;
+
+      const isCurrentBand = (band === bandSize);
+      // 显示当前罩杯差值附近的字母
+      const letterIndex = letters.indexOf(cupLetter);
+      const showLetter = isCurrentBand ? cupLetter : letters[Math.max(0, Math.min(letters.length - 1, letterIndex))];
+
+      const cls = isCurrentBand ? ' class="highlight"' : '';
+
+      html += '<tr' + cls + '>' +
+                '<td>' + band + ' cm</td>' +
+                '<td>' + band + showLetter + '</td>' +
+                '<td>' + (isCurrentBand ? cupDiff.toFixed(1) + ' cm（当前）' : '—') + '</td>' +
+              '</tr>';
+    }
+
+    tbody.innerHTML = html;
+    card.style.display = 'block';
+  }
+
+  // ================= 自动计算 =================
+  // 所有输入框填完后自动计算
+  document.querySelectorAll('input[type="number"]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const ids = ['underbust-relaxed','underbust-exhale','bust-relaxed','bust-45','bust-90'];
+      const allFilled = ids.every(id => {
+        const v = parseFloat(document.getElementById(id).value);
+        return !isNaN(v) && v > 0;
+      });
+      document.getElementById('calc-btn').disabled = !allFilled;
+    });
+  });
+
+  // 初始化按钮状态
+  document.getElementById('calc-btn').disabled = true;
+</script>
+
+</body>
+</html>
